@@ -1,0 +1,11 @@
+*.log
+npm-debug.log*
+node_modules
+.env
+.DS_STORE
+package-lock.json
+.vscode
+assets
+config
+ADMIN
+test.js
