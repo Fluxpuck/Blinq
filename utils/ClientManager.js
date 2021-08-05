@@ -6,7 +6,7 @@ const fs = require('fs');
 //set Sero Activity
 const setSeroActivity = async (client) => {
     //set bot presence/activity
-    client.user.setPresence({ status: `online`, activity: { type: `PLAYING`, name: `Trein Assistent | ns.` } })
+    client.user.setPresence({ status: `online`, activity: { type: `PLAYING`, name: `Pink Fluffy Unicorn` } })
 }
 
 //check if filepath is a directory
@@ -22,7 +22,7 @@ const getSeroCommands = async (filePath, options = {}) => {
     if (options.dealerFunction == 0 && options.print == false) throw new Error(`No file dealer function provided`)
     if (typeof (options.dealerFunction) != "function" && options.print == false) throw new Error(`Dealer function provided is not a function`)
 
-    let initCheck = isDir(filePath)
+    let initCheck = isDir(filePath);
 
     if (options.initialDirectoryCheck && !initCheck) throw new Error(`File path provided (${filePath}) is not a folder / directory.`)
 

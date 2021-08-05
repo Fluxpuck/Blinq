@@ -51,6 +51,9 @@ setTimeout(async function run() {
     let promise = new Promise((resolve, reject) => {
         //for each guild, track member data
         Array.from(client.guilds.cache.values()).forEach(async guild => {
+
+            await guild.members.fetch({ force: true }) //fetch members forcefully
+
             const roles = await getStatsRoles(guild); //get all roleIDs from Database
             const rolesInfo = await getRoles(guild, roles, 'all'); //get all role information
             const members = await getStatsMembers(guild, rolesInfo); //get all members from Roles

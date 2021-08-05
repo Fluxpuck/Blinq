@@ -25,7 +25,7 @@ module.exports.run = async (client, message, arguments, prefix, permissions) => 
             { name: `Uptime`, value: `${days} days, ${hours} hrs and ${minutes} min.`, inline: false },
         )
         .setThumbnail('https://cdn.discordapp.com/emojis/605943682734096394.png')
-        .setColor('#f6bf21')
+        .setColor('#44b0f6')
         .setFooter(`${client.user.username} | Made by Fluxpuck#0001`)
 
     //reply to user command
