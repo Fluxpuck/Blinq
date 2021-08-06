@@ -24,7 +24,7 @@ module.exports.run = async (client, message, arguments, prefix, permissions) => 
             { name: `Server Count`, value: `${client.guilds.cache.size}`, inline: true },
             { name: `Uptime`, value: `${days} days, ${hours} hrs and ${minutes} min.`, inline: false },
         )
-        .setThumbnail('https://cdn.discordapp.com/emojis/605943682734096394.png')
+        .setThumbnail(`${client.user.displayAvatarURL()}`)
         .setColor('#44b0f6')
         .setFooter(`${client.user.username} | Made by Fluxpuck#0001`)
 

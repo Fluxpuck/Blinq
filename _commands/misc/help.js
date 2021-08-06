@@ -12,7 +12,7 @@ module.exports.run = async (client, message, arguments, prefix, permissions) => 
     //setup the embedded message
     const helpMessage = new MessageEmbed()
         .setTitle(`${client.user.username} - Algemene Help`)
-        .setThumbnail('https://cdn.discordapp.com/emojis/644829999043444749.png')
+        .setThumbnail(`${client.user.displayAvatarURL()}`)
         .setColor('#44b0f6')
         .setFooter(`${client.user.username} | Made by Fluxpuck#0001`)
 
@@ -83,8 +83,8 @@ ${commandsByGroup[category].map(c => c.info.name).join('\n')}
             },
         )
 
-        //send message
-        message.channel.send({ embeds: [helpMessage] })
+        //reply to user command
+        message.reply({ embeds: [helpMessage] })
 
     }
 }
