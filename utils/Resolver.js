@@ -34,7 +34,7 @@ const getUserMessages = async (channel, member) => {
 
     //setup message collection & set first collected message
     let UserMessages = new Collection, duplicateArray = []
-    UserMessages.set(lastMessage[0].id, lastMessage)
+    UserMessages.set(lastMessage[0].id, lastMessage) // <---------------------------- issue here
 
     //if no message was fetched, return error
     if (UserMessages.size < 1) return false
@@ -142,7 +142,8 @@ const getRoles = async (guild, input, flag) => {
     let array_id = []
 
     //handle input (Array)
-    let input_string = Array.isArray(input) ? input.toString() : input
+    // let input_string = Array.isArray(input) ? input.toString() : input
+    let input_string = (typeof input == 'object') ? input.toString() : input
     let input_array = input_string.split(',')
 
     //go through every input

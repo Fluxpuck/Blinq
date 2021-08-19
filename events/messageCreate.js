@@ -53,7 +53,7 @@ module.exports = async (client, message) => {
                 //check default access permissions
                 const dft_access = permissions.dft_access.split(',')
                 dft_access.forEach(perm => {
-                    if (message.member.permissions.has(perm) == false) refuseArray.push(false)
+                    if (message.member.permissions.has(perm.trim()) == false) refuseArray.push(false)
                 });
 
                 /*  check if the refuse array does not have any false permissions

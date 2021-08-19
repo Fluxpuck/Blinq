@@ -39,10 +39,7 @@ const database = require('./config/database');
 //require utilities
 const { getRoles, userStats } = require('./utils/Resolver');
 const { getStatsRoles, getStatsMembers, getGuildPrefix } = require('./utils/GuildManager');
-const { millisecondsUntilMidnight, time } = require('./utils/functions');
-
-
-
+const { millisecondsUntilMidnight } = require('./utils/functions');
 
 /** UserStats Module
  */ let timer = millisecondsUntilMidnight()
@@ -53,13 +50,15 @@ setTimeout(async function run() {
         Array.from(client.guilds.cache.values()).forEach(async guild => {
 
             await guild.members.fetch({ force: true }) //fetch members forcefully
+            await guild.channels.fetch() //fetch all channels 
 
             const roles = await getStatsRoles(guild); //get all roleIDs from Database
             const rolesInfo = await getRoles(guild, roles, 'all'); //get all role information
             const members = await getStatsMembers(guild, rolesInfo); //get all members from Roles
-            const channels = await guild.channels.cache.array() //get all text-channels from Guild
-                .filter(channel => channel.type == 'GUILD_TEXT')
-                .map(channel => channel)
+            const channels = textchannels.filter(channel => channel.type == 'GUILD_TEXT').map(channel => channel)
+            const threads = threadchannels.threads.filter(channel => channel.deleted == false).map(channel => channel)
+
+            const channelcollection = channels.concat(threads)
 
             //log the userStats for each member 
             //throughout each guild text-channel
@@ -68,15 +67,15 @@ setTimeout(async function run() {
                 let total_messages = 0
                 let uniq_messages = 0
 
-                for (let i = 0; i < channels.length; i++) {
-                    const UserStats = await userStats(channels[i], member)
+                for (let i = 0; i < channelcollection.length; i++) {
+                    const UserStats = await userStats(channelcollection[i], member)
                     total_messages += UserStats[0]
                     uniq_messages += UserStats[1]
                 };
 
                 //write userStats forEach user to Database
                 let insert = { "user_id": member.user.id, "user_name": member.user.username, "total_messages": total_messages, "uniq_messages": uniq_messages }
-                //insert into the database
+                // insert into the database
                 database.query(`INSERT INTO ${guild.id}_userstats set ?`, insert, function (err, result) {
                     if (err) return console.log(err)
                 });
