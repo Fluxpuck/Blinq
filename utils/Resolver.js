@@ -39,11 +39,18 @@ const collectAllMessages = async (channel) => {
         FetchMessages = await channel.messages.fetch(options) //collect messages
         FetchMessages.map(message => { messageCollection.set(message.id, message) })
 
+        // console.log(messageCollection.last())
+        console.log(Array.from(messageCollection.last(1))[0].id) // ERRORS OUT ON GIVEAWAY-30plus CHANNEL?? NO IDEA WHY
+        console.log(Array.from(messageCollection)[messageCollection.size - 1][1].id)
+
         //check for and set LastMessage values
-        if (Array.from(messageCollection)[messageCollection.size - 1][1]) {
-            LastMessage = Array.from(messageCollection)[messageCollection.size - 1][1];
+        if (messageCollection.last(1)) {
+            LastMessage = Array.from(messageCollection)[messageCollection.size - 1][1]
             LastMessageTimestamp = convertSnowflake(LastMessage.id);
         }
+
+        console.log(channel.name, LastMessage.id, LastMessageTimestamp)
+        console.log(`https://discord.com/channels/${channel.guild.id}/${channel.id}/${LastMessage.id}`)
 
         //if last message is older than 24 hours, break the loop
         if (olderThan(LastMessageTimestamp) == true) break;
@@ -323,26 +330,6 @@ const userStats = async (channel, members) => {
     // return [total_messages, uniq_messages]
 }
 
-/**
- * 
- * @param {*} guild 
- * @returns 
- */
-const getStatChannels = async (guild) => {
-    //fetch all channels & (active) threads from guild
-    const textchannels = await guild.channels.fetch()
-    const threadchannels = await guild.channels.fetchActiveThreads()
-
-    //filter out all non text-channels & deleted threads
-    const channels = textchannels.filter(channel => channel.type == 'GUILD_TEXT').map(channel => channel)
-    const threads = threadchannels.threads.filter(channel => channel.deleted == false).map(channel => channel)
-
-    //merge collections
-    const channelcollection = channels.concat(threads)
-
-    //return collection
-    return channelcollection
-}
 
 
 module.exports = {
@@ -354,6 +341,5 @@ module.exports = {
     getCommand,
     findCommand,
     inputType,
-    userStats,
-    getStatChannels
+    userStats
 }
