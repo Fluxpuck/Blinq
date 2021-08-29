@@ -4,11 +4,67 @@ const moment = require('moment')
 const database = require('../config/database');
 //require utilities
 const { Collection } = require('discord.js');
-const { time } = require('../utils/functions');
+const { convertSnowflake, olderThan, time } = require('../utils/functions');
 
 /*------------------------------*/
 
-//resolve messages
+/**
+ * Fetch all messages (within 24 hours) from a channel
+ * @param {Object} channel 
+ * @returns 
+ */
+const collectAllMessages = async (channel) => {
+
+    if (!channel) return //if there are no channels, return
+
+    //setup the message collection
+    let messageCollection = new Collection
+
+    //get last message from the channel
+    let FetchMessages = 0, LastMessage = 0, LastMessageTimestamp = 0
+    FetchMessages = await channel.messages.fetch({ limit: 1, force: true });
+    if ([...FetchMessages.values()].length > 0) {
+        LastMessage = Array.from(FetchMessages)[FetchMessages.size - 1][1];
+        LastMessageTimestamp = convertSnowflake(LastMessage.id);
+    }
+
+    // console.log(channel.name)
+    // console.log(LastMessageTimestamp, olderThan(LastMessageTimestamp))
+
+    //keep fetching messages, as long as last message is not older than timestamp
+    while (olderThan(LastMessageTimestamp) == false) {
+
+        //collect messages in chunks of 100
+        const options = { before: LastMessage.id, limit: 100 } //set filter options
+        FetchMessages = await channel.messages.fetch(options) //collect messages
+        FetchMessages.map(message => { messageCollection.set(message.id, message) })
+
+        //check for and set LastMessage values
+        if (Array.from(messageCollection)[messageCollection.size - 1][1]) {
+            LastMessage = Array.from(messageCollection)[messageCollection.size - 1][1];
+            LastMessageTimestamp = convertSnowflake(LastMessage.id);
+        }
+
+        //if last message is older than 24 hours, break the loop
+        if (olderThan(LastMessageTimestamp) == true) break;
+
+    }
+
+    //remove spilled messages, older than 24 hours
+    messageCollection.sweep(message => olderThan(convertSnowflake(message.id)) == true)
+
+    //return the message collection
+    return messageCollection
+}
+
+/**
+ * Resolve messages
+ * @param {Number} numOfMessages 
+ * @param {Time} timeToWait 
+ * @param {Map} message 
+ * @param {Object} customFilter 
+ * @returns 
+ */
 const getMessages = async (numOfMessages, timeToWait, message, customFilter = 0) => {
     //check if custom_filter is set, else filter by message author
     let filter = (customFilter != 0) ? customFilter : m => m.author.id == message.author.id // Improved filtering.
@@ -21,74 +77,13 @@ const getMessages = async (numOfMessages, timeToWait, message, customFilter = 0)
     return retValue
 }
 
-//resolve user messages
-const getUserMessages = async (channel, member) => {
-    if (!member) return
-
-    //limit the amount to 2000 messages
-    const amount = 2000
-
-    //get last message from user in current channel
-    let lastMessages = await channel.messages.fetch({ limit: 5 })
-    let lastMessage = Array.from(lastMessages.first(1))
-
-    //setup message collection & set first collected message
-    let UserMessages = new Collection, duplicateArray = []
-    UserMessages.set(lastMessage[0].id, lastMessage) // <---------------------------- issue here
-
-    //if no message was fetched, return error
-    if (UserMessages.size < 1) return false
-
-    //recursive function that keeps looking for user messages till amount is full
-    while (UserMessages.size < amount) {
-
-        //get last collection message
-        lastMessage = Array.from(UserMessages.last(1))
-
-        //keep track of lastMessage ids and prevent duplicates
-        if (duplicateArray.includes(lastMessage[0].id)) break;
-        duplicateArray.push(lastMessage[0].id);
-
-        //break the loop if the last message is older than 1 day
-        if (OlderThan(lastMessage[0].createdTimestamp) == true) break;
-
-        //setup filter options
-        const options = { before: lastMessage[0].id, limit: 100 }
-
-        //collect the messages
-        let MsgCollection = await channel.messages.fetch(options)
-        //remove everything from collection that is not from target user
-        MsgCollection.sweep(message => message.author.id != member.user.id);
-
-        //create array of filtered messages
-        let FilterCollection = Array.from(MsgCollection.values())
-
-        //put every message in the collection
-        await FilterCollection.map(message => { //add all filtered messages to collection
-            if (OlderThan(message.createdTimestamp) == false
-                && UserMessages.size < amount) UserMessages.set(message.id, message);
-        });
-
-    }
-
-    //delete left over message(s) not from target user
-    UserMessages.sweep(msg => msg.author != member.user)
-
-    //return the user message collection!
-    return UserMessages
-
-    //small function to check if message timestamp is older than ...
-    function OlderThan(timestamp) {
-        //setup the times
-        const inputTime = moment(timestamp)
-        const currentTime = moment()
-        //check if difference between dates is more than 2 weeks
-        if (currentTime.diff(inputTime, 'days') > 1) { return true }
-        else { return false }
-    }
-}
-
-//resolve channel
+/**
+ * Resolve channel
+ * @param {Object} guild 
+ * @param {Array} input 
+ * @param {String} flag 
+ * @returns 
+ */
 const getChannels = async (guild, input, flag) => {
 
     //create return array
@@ -135,7 +130,13 @@ const getChannels = async (guild, input, flag) => {
     else return false
 }
 
-//resolve role
+/**
+ * Resolve role
+ * @param {Object} guild 
+ * @param {Array} input 
+ * @param {String} flag 
+ * @returns 
+ */
 const getRoles = async (guild, input, flag) => {
 
     //create return array
@@ -183,7 +184,12 @@ const getRoles = async (guild, input, flag) => {
 
 }
 
-//resolve user
+/**
+ * Resolve user
+ * @param {Object} guild 
+ * @param {String} input 
+ * @returns 
+ */
 const getUser = async (guild, input) => {
     if (!input) return
 
@@ -218,7 +224,13 @@ const getUser = async (guild, input) => {
     if (!member) return false;
 }
 
-//get command and guild permissions
+/**
+ * Get command and guild permissions
+ * @param {Object} client 
+ * @param {Map} message 
+ * @param {String} input 
+ * @returns 
+ */
 const getCommand = async (client, message, input) => {
     //create commandInfo variable and get or find the command-name based on name or alias.
     let commandInfo = client.commands.get(input) || client.commands.find(cmd => cmd.info.alias && cmd.info.alias.includes(input));
@@ -251,7 +263,12 @@ const getCommand = async (client, message, input) => {
     else return false
 }
 
-//find command
+/**
+ * Find command
+ * @param {Object} client 
+ * @param {String} input 
+ * @returns 
+ */
 const findCommand = async (client, input) => {
     //create commandInfo variable and get or find the command-name based on name or alias.
     let commandInfo = client.commands.get(input) || client.commands.find(cmd => cmd.info.alias && cmd.info.alias.includes(input));
@@ -260,7 +277,12 @@ const findCommand = async (client, input) => {
     else return false
 }
 
-//get input type for purge
+/**
+ * Get input type for purge
+ * @param {Object} guild 
+ * @param {String} input 
+ * @returns 
+ */
 const inputType = async (guild, input) => {
 
     //create return array
@@ -284,28 +306,54 @@ const inputType = async (guild, input) => {
     return typeArray //return to outcome
 }
 
-//go over all channels and fetch messages
-const userStats = async (channel, member) => {
+/**
+ * Go over all channels and fetch messages
+ * @param {Map} channel 
+ * @param {Array} members 
+ */
+const userStats = async (channel, members) => {
     //get the message collection (all messages from the past 24 hours)
-    var collection01 = await getUserMessages(channel, member)
+    // var collection01 = await getUserMessages(channel, members)
     //convert all timestamps to hours and minutes and get all unique values
-    var collection02 = await [...new Set(collection01.map(message => time(new Date(message.createdTimestamp))))];
+    // var collection02 = await [...new Set(collection01.map(message => time(new Date(message.createdTimestamp))))];
 
-    var total_messages = (collection01.size)
-    var uniq_messages = (collection02.length)
+    // var total_messages = (collection01.size)
+    // var uniq_messages = (collection02.length)
 
-    return [total_messages, uniq_messages]
+    // return [total_messages, uniq_messages]
+}
+
+/**
+ * 
+ * @param {*} guild 
+ * @returns 
+ */
+const getStatChannels = async (guild) => {
+    //fetch all channels & (active) threads from guild
+    const textchannels = await guild.channels.fetch()
+    const threadchannels = await guild.channels.fetchActiveThreads()
+
+    //filter out all non text-channels & deleted threads
+    const channels = textchannels.filter(channel => channel.type == 'GUILD_TEXT').map(channel => channel)
+    const threads = threadchannels.threads.filter(channel => channel.deleted == false).map(channel => channel)
+
+    //merge collections
+    const channelcollection = channels.concat(threads)
+
+    //return collection
+    return channelcollection
 }
 
 
 module.exports = {
+    collectAllMessages,
     getMessages,
-    getUserMessages,
     getChannels,
     getRoles,
     getUser,
     getCommand,
     findCommand,
     inputType,
-    userStats
+    userStats,
+    getStatChannels
 }

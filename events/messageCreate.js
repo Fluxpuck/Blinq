@@ -16,7 +16,7 @@ module.exports = async (client, message) => {
     //reply with Guild Prefix on bot mention
     let bot_mention = new RegExp('<@!([0-9]+)>', 'g').exec(message.content) || new RegExp('<@([0-9]+)>', 'g').exec(message.content)
     if (bot_mention != null && bot_mention[1] == client.user.id) {
-        message.channel.send(`> Current server prefix: \`${prefix}\``).then(msg => { msg.delete({ timeout: 10000, reason: 'Guild prefix' }); })
+        message.reply(`Hey, this server's prefix is \`${prefix}\``)
     }
 
     //filter message content into workable elements

@@ -1,3 +1,4 @@
+const { Collection } = require("discord.js");
 
 //resolve messages
 const getMessages = async (numOfMessages, timeToWait, message, customFilter = 0) => {

@@ -50,11 +50,12 @@ setTimeout(async function run() {
         Array.from(client.guilds.cache.values()).forEach(async guild => {
 
             await guild.members.fetch({ force: true }) //fetch members forcefully
-            await guild.channels.fetch() //fetch all channels 
 
             const roles = await getStatsRoles(guild); //get all roleIDs from Database
             const rolesInfo = await getRoles(guild, roles, 'all'); //get all role information
             const members = await getStatsMembers(guild, rolesInfo); //get all members from Roles
+            const textchannels = await message.guild.channels.fetch() //fetch all text channels
+            const threadchannels = await message.guild.channels.fetchActiveThreads() //fetch all active threads
             const channels = textchannels.filter(channel => channel.type == 'GUILD_TEXT').map(channel => channel)
             const threads = threadchannels.threads.filter(channel => channel.deleted == false).map(channel => channel)
 
