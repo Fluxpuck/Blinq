@@ -64,7 +64,13 @@ const getStatChannels = async (guild) => {
     return channelcollection
 }
 
-const processStats = async (perChannelCollection, member) => {
+/**
+ * 
+ * @param {*} perChannelCollection 
+ * @param {*} member 
+ * @returns 
+ */
+const filterMessages = async (perChannelCollection, member) => {
 
     let perMemberCollection = new Collection; //collection with messages per member
 
@@ -84,8 +90,8 @@ const processStats = async (perChannelCollection, member) => {
         });
 
         //set collection per member
-        // perMemberCollection.set(key, tempCollection)
-        perMemberCollection.set(key.name, tempCollection.size)
+        perMemberCollection.set(key, tempCollection)
+        // perMemberCollection.set(key.id, tempCollection.size)
 
     }
 
@@ -94,6 +100,7 @@ const processStats = async (perChannelCollection, member) => {
 
 }
 
+
 /*------------------------------*/
 
 //export all functions
@@ -101,5 +108,5 @@ module.exports = {
     getStatsRoles,
     getStatsMembers,
     getStatChannels,
-    processStats
+    filterMessages
 }

@@ -1,5 +1,3 @@
-//require packages
-const moment = require('moment')
 //setup database connection(s)
 const database = require('../config/database');
 //require utilities
@@ -40,8 +38,8 @@ const collectAllMessages = async (channel) => {
         FetchMessages.map(message => { messageCollection.set(message.id, message) })
 
         // console.log(messageCollection.last())
-        console.log(Array.from(messageCollection.last(1))[0].id) // ERRORS OUT ON GIVEAWAY-30plus CHANNEL?? NO IDEA WHY
-        console.log(Array.from(messageCollection)[messageCollection.size - 1][1].id)
+        // console.log(Array.from(messageCollection.last(1))[1].id) // ERRORS OUT ON GIVEAWAY-30plus CHANNEL?? NO IDEA WHY
+        // console.log(Array.from(messageCollection)[messageCollection.size - 1][1].id)
 
         //check for and set LastMessage values
         if (messageCollection.last(1)) {
@@ -49,8 +47,8 @@ const collectAllMessages = async (channel) => {
             LastMessageTimestamp = convertSnowflake(LastMessage.id);
         }
 
-        console.log(channel.name, LastMessage.id, LastMessageTimestamp)
-        console.log(`https://discord.com/channels/${channel.guild.id}/${channel.id}/${LastMessage.id}`)
+        // console.log(channel.name, LastMessage.id, LastMessageTimestamp)
+        // console.log(`https://discord.com/channels/${channel.guild.id}/${channel.id}/${LastMessage.id}`)
 
         //if last message is older than 24 hours, break the loop
         if (olderThan(LastMessageTimestamp) == true) break;
@@ -319,9 +317,9 @@ const inputType = async (guild, input) => {
  * @param {Array} members 
  */
 const userStats = async (channel, members) => {
-    //get the message collection (all messages from the past 24 hours)
+    // // get the message collection (all messages from the past 24 hours)
     // var collection01 = await getUserMessages(channel, members)
-    //convert all timestamps to hours and minutes and get all unique values
+    // // convert all timestamps to hours and minutes and get all unique values
     // var collection02 = await [...new Set(collection01.map(message => time(new Date(message.createdTimestamp))))];
 
     // var total_messages = (collection01.size)
