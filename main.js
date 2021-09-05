@@ -39,7 +39,7 @@ const database = require('./config/database');
 //require utilities
 const { getRoles, collectAllMessages } = require('./utils/Resolver');
 const { getLoggingChannel, getStatsRoles, getStatsMembers, getStatChannels, filterMessages } = require('./utils/StatsManager');
-const { time } = require('./utils/functions');
+const { time, millisecondsUntilMidnight } = require('./utils/functions');
 
 /** UserStats Module
  */ let timer = millisecondsUntilMidnight()
