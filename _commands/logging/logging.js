@@ -3,7 +3,7 @@ const { Collection } = require('discord.js');
 
 //require utilities
 const { getRoles, collectAllMessages } = require('../../utils/Resolver');
-const { getLoggingChannel, getStatsRoles, getStatsMembers, getStatChannels, filterMessages, storeUserStats } = require('../../utils/StatsManager');
+const { getLoggingChannel, getStatsRoles, getStatsMembers, getStatChannels, filterMessages } = require('../../utils/StatsManager');
 const { time } = require('../../utils/functions');
 
 //setup database connection
