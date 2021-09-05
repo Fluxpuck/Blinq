@@ -6,8 +6,26 @@ const database = require('../config/database');
 /*------------------------------*/
 
 /**
- * 
- * @param {*} guild 
+ * Collect the selected roles from database
+ * @param {Object} guild 
+ * @returns 
+ */
+const getLoggingChannel = async (guild) => {
+    return new Promise(async function (resolve) {
+        const query = (`SELECT * FROM guild_settings WHERE guild_id = "${guild.id}"`)
+        database.query(query, async function (err, result) { resolve(result) })
+    }).then(async function (result) {
+        //return if no guild was found in the Database
+        if (!result || result.length < 1) return false
+        //get the guild_roles to track
+        const guild_roles = result[0].log_chnl
+        return guild_roles.split(',')
+    })
+}
+
+/**
+ * Collect the selected roles from database
+ * @param {Object} guild 
  * @returns 
  */
 const getStatsRoles = async (guild) => {
@@ -24,9 +42,9 @@ const getStatsRoles = async (guild) => {
 }
 
 /**
- * 
- * @param {*} guild 
- * @param {*} roles 
+ * Collect the members from selected roles
+ * @param {Object} guild 
+ * @param {Array} roles 
  * @returns 
  */
 const getStatsMembers = async (guild, roles) => {
@@ -44,8 +62,8 @@ const getStatsMembers = async (guild, roles) => {
 }
 
 /**
- * 
- * @param {*} guild 
+ * Collect all text- and (active) text channels
+ * @param {Object} guild 
  * @returns 
  */
 const getStatChannels = async (guild) => {
@@ -65,9 +83,9 @@ const getStatChannels = async (guild) => {
 }
 
 /**
- * 
- * @param {*} perChannelCollection 
- * @param {*} member 
+ * Filter all messages per member
+ * @param {Collection} perChannelCollection 
+ * @param {Object} member 
  * @returns 
  */
 const filterMessages = async (perChannelCollection, member) => {
@@ -76,9 +94,6 @@ const filterMessages = async (perChannelCollection, member) => {
 
     //go over all channel message collections
     for (const [key, value] of perChannelCollection.entries()) {
-
-        // console.log(key.name)
-        // console.log(value.size)
 
         //create array of filtered messages
         let FilterCollection = Array.from(value.values());
@@ -105,6 +120,7 @@ const filterMessages = async (perChannelCollection, member) => {
 
 //export all functions
 module.exports = {
+    getLoggingChannel,
     getStatsRoles,
     getStatsMembers,
     getStatChannels,

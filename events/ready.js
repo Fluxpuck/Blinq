@@ -33,6 +33,7 @@ module.exports = async (client) => {
         DataManager.updateGeneralPermissions(guild); //update Guild settings
         DataManager.updateCommandPermissions(guild, client.commands); //update Guild command permissions  
         DataManager.updateUserStatsLogging(guild); //update User Stats logging 
+        DataManager.updateperChannelStatsLogging(guild); //update per Channel Stats logging
 
         //fetch and cache members from guild
         await guild.members.fetch();

@@ -58,12 +58,13 @@ const updateGeneralPermissions = async (guild) => {
         track_roles longtext not null,
         chnl_excl longtext not null,
         member_excl longtext not null,
+        log_chnl VARCHAR(22) not null,
         create_date timestamp not null default current_timestamp,
         update_date timestamp not null default current_timestamp on update current_timestamp
     )`;
     await database.query(query, function (err, result) {
         if (err) return console.log(err);
-        let insert = { "guild_id": guild.id, "guild_name": guild.name, "track_roles": 0, "chnl_excl": 0, "member_excl": 0 }
+        let insert = { "guild_id": guild.id, "guild_name": guild.name, "track_roles": 0, "chnl_excl": 0, "member_excl": 0, "log_chnl": 0 }
         //insert into the database
         database.query(`INSERT IGNORE INTO guild_settings set ?`, insert, function (err, result) {
             if (err) return console.log(err)
@@ -108,6 +109,23 @@ const updateUserStatsLogging = async (guild) => {
     });
 }
 
+//update channelStats logging table
+const updateperChannelStatsLogging = async (guild) => {
+    const query = `create table if not exists ${guild.id}_perchannelstats(
+        ID int not null auto_increment PRIMARY KEY,
+        user_id VARCHAR(22) not null,
+        user_name VARCHAR(50) not null,
+        channel_id VARCHAR(22) not null,
+        channel_name VARCHAR(50) not null,
+        total_messages VARCHAR(11) not null,
+        uniq_messages VARCHAR(11) not null,
+        create_date timestamp not null default current_timestamp
+    )`;
+    await database.query(query, function (err, result) {
+        if (err) return console.log(err);
+    });
+}
+
 
 /*------------------------------*/
 
@@ -116,5 +134,6 @@ module.exports = {
     updateGuildinfo,
     updateGeneralPermissions,
     updateCommandPermissions,
-    updateUserStatsLogging
+    updateUserStatsLogging,
+    updateperChannelStatsLogging
 }
