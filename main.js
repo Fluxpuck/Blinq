@@ -37,6 +37,7 @@ events.run(client);
 const database = require('./config/database');
 
 //require utilities
+const { getGuildPrefix } = require('./utils/GuildManager');
 const { getRoles, collectAllMessages } = require('./utils/Resolver');
 const { getLoggingChannel, getStatsRoles, getStatsMembers, getStatChannels, filterMessages } = require('./utils/StatsManager');
 const { time, millisecondsUntilMidnight } = require('./utils/functions');
@@ -54,6 +55,7 @@ setTimeout(async function run() {
             //collect the members from specified role(s)
             const roles = await getStatsRoles(guild); //get all roleIDs from Database
             const rolesInfo = await getRoles(guild, roles, 'all'); //get all role information
+            if (rolesInfo === false) return; //if there are no roles to track, stop and return
             const members = await getStatsMembers(guild, rolesInfo); //get all members from Roles
 
             //collect channels

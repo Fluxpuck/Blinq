@@ -17,34 +17,21 @@ module.exports.run = async (client, message, arguments, prefix, permissions) => 
     //collect the members from specified role(s)
     const roles = await getStatsRoles(message.guild); //get all roleIDs from Database
     const rolesInfo = await getRoles(message.guild, roles, 'all'); //get all role information
+    if (rolesInfo === false) return; //if there are no roles to track, stop and return
     const members = await getStatsMembers(message.guild, rolesInfo); //get all members from Roles
 
     //collect channels
     const channels = await getStatChannels(message.guild); //get all text-channels and (active) threads
-
-    //check for loggingChannel & start logging process
-    let loggingChannel, counter = 1 //setup loggingChannel and initiate counter
-    const loggingChannelData = await getLoggingChannel(message.guild) //get logging channelId's
-    if (loggingChannelData != false) loggingChannel = await message.guild.channels.cache.get(loggingChannelData[0])
-    if (loggingChannel) loggingChannel.send(`*Start collecting messages from channels... (${counter}/${channels.length})*`)
 
     //setup the message collection & userStatsMap
     let perChannelCollection = new Collection; //collection with ALL messages per channel
 
     //collect messages from each channel (within 24 hrs)
     for (let i = 0; i < channels.length; i++) {
-
-        counter++ //update counter (+1) and update logging message
-        if (counter <= channels.length && loggingChannel) { await loggingChannel.edit(`*Collecting messages from __${channels[i].name}__... (${counter}/${channels.length})*`) }
-
         //collect all messages within 24 hours from channel
         const channelMsgCollection = await collectAllMessages(channels[i])
         perChannelCollection.set(channels[i], channelMsgCollection)
-
     };
-
-    //update logging message
-    if (loggingChannel) { await loggingChannel.edit(`*Finished collecting messages... (${counter}/${channels.length})*`) }
 
     //process messages per channel, per member
     for (let i = 0; i < members.length; i++) {
@@ -85,10 +72,6 @@ module.exports.run = async (client, message, arguments, prefix, permissions) => 
         console.log(insert) //log the insertion
 
     }
-
-    //finish logging message
-    if (loggingChannel) { await loggingChannel.edit(`*Finished! Saved all statistics to Database*`) }
-
 }
 
 
