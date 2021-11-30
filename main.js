@@ -41,6 +41,7 @@ const database = require('./config/database');
 const { getGuildPrefix } = require('./utils/GuildManager');
 const { getRoles, collectAllMessages } = require('./utils/Resolver');
 const { getLoggingChannel, getStatsRoles, getStatsMembers, getStatChannels, filterMessages } = require('./utils/StatsManager');
+const { time } = require('./utils/functions');
 
 /** UserStats Module */
 cron.schedule('0 1 * * *', () => {
