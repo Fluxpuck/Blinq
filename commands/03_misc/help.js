@@ -1,22 +1,24 @@
-//construct packages
-const { MessageEmbed } = require('discord.js');
+/*  Fluxpuck © Creative Commons Attribution-NoDerivatives 4.0 International Public License
+    For more information on the commands, please visit hyperbot.cc  */
 
-//require embed structures
+//import styling from assets
+const embed = require('../../assets/embed.json');
+
+//load required modules
+const { MessageEmbed } = require('discord.js');
 const { capitalize } = require('../../utils/functions');
 
-/*------------------------------*/
-
 //construct the command and export
-module.exports.run = async (client, message, arguments, prefix, permissions) => {
+module.exports.run = async (client, message, arguments, prefix) => {
 
     //setup the embedded message
     const helpMessage = new MessageEmbed()
-        .setTitle(`${client.user.username} - Algemene Help`)
-        .setThumbnail(`${client.user.displayAvatarURL()}`)
-        .setColor('#44b0f6')
-        .setFooter(`${client.user.username} | Made by Fluxpuck#0001`)
+        .setTitle('Hyper - General Help')
+        .setThumbnail(embed.thumbnail)
+        .setColor(embed.color)
+        .setFooter({ text: `${message.author.tag}`, iconURL: message.author.displayAvatarURL({ dynamic: false }) });
 
-    //filter/sort all elements based on category
+    //filter/sort all commands based on category
     const commandsByGroup = client.commands.reduce((key, value) => {
         // Group initialization
         if (!key[value.info.category]) {
@@ -31,8 +33,8 @@ module.exports.run = async (client, message, arguments, prefix, permissions) => 
     if (arguments.length < 1) {
 
         //general embed description
-        helpMessage.setDescription(`${client.user.username} is a bot for tracking moderator activity in the server. The list below shows all the available commands.
-        *Current server prefix is \`${prefix}\`*`)
+        helpMessage.setDescription(`<@${client.user.id}> is a comprehensive server management bot, that allows for basic moderation, logging events, and more!\
+        \ Use command \`${prefix}help [command]\` to get more detailed information.`)
 
         //got through all categories
         for (const category of Object.keys(commandsByGroup)) {
@@ -51,56 +53,58 @@ ${commandsByGroup[category].map(c => c.info.name).join('\n')}
             }
         }
 
-        //send message
-        message.channel.send({ embeds: [helpMessage] })
-
+        //reply to message
+        message.reply({ embeds: [helpMessage] })
+            .catch((err) => { });
     }
 
     //if argument is command, give command help
     if (arguments.length > 0 && client.commands.has(arguments[0])) {
         const commandInfo = client.commands.get(arguments[0]).info
 
-        //change embed variables
-        helpMessage.setTitle(`${client.user.username} - Commando Help`)
-        helpMessage.setFooter(`${capitalize(commandInfo.name)} | Made by Fluxpuck#0001`)
+        //change embed letiables
+        helpMessage.setTitle(`Hyper - Command Help`)
 
         //command information
         helpMessage.addFields(
             {
                 name: `Description`,
-                value: `\`\`\`${commandInfo.desc}\`\`\``,
+                value: `\`\`\`${commandInfo.desc}.\`\`\``,
                 inline: false
             },
             {
                 name: `Usage`,
-                value: `\`\`\`${commandInfo.usage.replace('[prefix]', prefix)}\`\`\``,
+                value: `\`\`\`${commandInfo.usage.replace('{prefix}', prefix)}\`\`\``,
                 inline: true
             },
             {
                 name: `Alias`,
-                value: `\`\`\`${commandInfo.alias.join(', ')}\`\`\``,
+                value: `\`\`\`${commandInfo.alias.length > 0 ? commandInfo.alias.join(', ') : "None"}\`\`\``,
                 inline: true
             },
         )
 
-        //reply to user command
+        //reply to message
         message.reply({ embeds: [helpMessage] })
-
+            .catch((err) => { });
     }
+
 }
 
 
 //command information
 module.exports.info = {
     name: 'help',
-    category: 'misc',
     alias: [],
-    usage: '[prefix]help',
+    category: 'misc',
     desc: 'Get more information related to all the available commands',
+    usage: '{prefix}help',
 }
 
-//command permission groups
-module.exports.permissions = [
-    "VIEW_CHANNEL",
-    "SEND_MESSAGES"
-]
+//slash setup
+module.exports.slash = {
+    slash: false,
+    options: [],
+    permission: [],
+    defaultPermission: false,
+}

@@ -1,20 +1,23 @@
-//construct Sero utilities
-const ClientManager = require('../utils/ClientManager');
-const DataManager = require('../utils/DataManager');
-const { logCommandTable } = require('../utils/ConsoleManager');
+/*  Fluxpuck © Creative Commons Attribution-NoDerivatives 4.0 International Public License  
+    This event is triggers by Discord and does processing of data  */
 
-//construct packages and set path to command directory
+//load required modules
 const { join } = require('path');
-const wait = require('util').promisify(setTimeout);
-const commandFolder = join(__dirname, '..', '_commands');
+const commandFolder = join(__dirname, '..', 'commands');
+const { Collection } = require('discord.js');
 
-//exports event
+//require Managers
+const ClientConsole = require('../utils/ConsoleManager');
+const ClientManager = require('../utils/ClientManager');
+const DataManager = require('../database/DbManager');
+
+//require Queries
+const { loadGuildPrefixes } = require('../database/QueryManager');
+
+//exports "ready" event
 module.exports = async (client) => {
 
-    //set bot activity
-    await ClientManager.setSeroActivity(client);
-
-    //load all commands
+    //find all client commandfiles
     async function fileLoader(fullFilePath) {
         if (fullFilePath.endsWith(".js")) {
             let props = require(fullFilePath)
@@ -22,25 +25,34 @@ module.exports = async (client) => {
         }
     }
 
-    //go through all folders and get the commands
-    await ClientManager.getSeroCommands(commandFolder, { dealerFunction: fileLoader })
-    logCommandTable(client.commands) //log all commands to console.table
-    console.log(` > Loaded ${Array.from(client.commands.keys()).length} command${Array.from(client.commands.keys()).length > 1 ? 's' : ''} successfully.`)
+    //get and initialize client commands
+    await ClientManager.getClientCommands(commandFolder, { dealerFunction: fileLoader })
 
-    //check all Databases per Guild
-    await Array.from(client.guilds.cache.values()).forEach(async guild => {
-        DataManager.updateGuildinfo(guild); //update Guild information
-        DataManager.updateGeneralPermissions(guild); //update Guild settings
-        DataManager.updateCommandPermissions(guild, client.commands); //update Guild command permissions  
-        DataManager.updateUserStatsLogging(guild); //update User Stats logging 
-        DataManager.updateperChannelStatsLogging(guild); //update per Channel Stats logging
+    //check and update all database tables
+    const guilds = Array.from(client.guilds.cache.values())
+    for await (let guild of guilds) {
+        //update client/guild table(s)
+        await DataManager.UpdateGuildTable();
+        await DataManager.UpdateTrackingTable(guild.id);
+        //load guild specific values
+        await loadGuildPrefixes(guild);
+        //setup guild collection(s)
+        guild.messagePool = await new Collection;
+    }
 
-        //fetch and cache members from guild
-        await guild.members.fetch();
-    })
+    //on the background fetch all members
+    for (let guild of guilds) {
+        //fetch all members per guild
+        guild.members.fetch();
+    }
 
-    await wait(1500) //wait for all items to be loaded
-    console.log(`───────────────────────────────────────────────`)
-    console.log(`Logged in as ${client.user.tag}!`);
+    //set client activity
+    await ClientManager.setClientActivity(client);
 
+    //finalize with the Console Messages
+    ClientConsole.WelcomeMessage();
+    ClientConsole.EventMessage(client.events);
+    ClientConsole.CommandMessage(client.commands);
+
+    return;
 }

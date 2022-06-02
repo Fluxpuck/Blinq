@@ -1,313 +1,138 @@
-//setup database connection(s)
-const database = require('../config/database');
-//require utilities
-const { Collection } = require('discord.js');
-const { convertSnowflake, olderThan, time } = require('../utils/functions');
+/*  Fluxpuck © Creative Commons Attribution-NoDerivatives 4.0 International Public License  
+    The Resolver contains all functions parsing and collecting information */
 
-/*------------------------------*/
-
-/**
- * Fetch all messages (within 24 hours) from a channel
- * @param {Object} channel 
- * @returns 
- */
-const collectAllMessages = async (channel) => {
-
-    if (!channel) return //if there are no channels, return
-
-    //setup the message collection
-    let messageCollection = new Collection
-
-    //get last message from the channel
-    let FetchMessages = 0, LastMessage = 0, LastMessageTimestamp = 0
-    FetchMessages = await channel.messages.fetch({ limit: 1, force: true });
-    if ([...FetchMessages.values()].length > 0) {
-        LastMessage = Array.from(FetchMessages)[FetchMessages.size - 1][1];
-        LastMessageTimestamp = convertSnowflake(LastMessage.id);
-    }
-
-    //keep fetching messages, as long as last message is not older than timestamp
-    while (olderThan(LastMessageTimestamp) == false) {
-
-        //collect messages in chunks of 100
-        const options = { before: LastMessage.id, limit: 100 } //set filter options
-        FetchMessages = await channel.messages.fetch(options) //collect messages
-        FetchMessages.map(message => { messageCollection.set(message.id, message) })
-
-        //check for and set LastMessage values
-        if (messageCollection.last(1)) {
-            LastMessage = Array.from(messageCollection)[messageCollection.size - 1][1]
-            LastMessageTimestamp = convertSnowflake(LastMessage.id);
-        }
-
-        //if last message is older than 24 hours, break the loop
-        if (olderThan(LastMessageTimestamp) == true) break;
-
-    }
-
-    //remove spilled messages, older than 24 hours
-    messageCollection.sweep(message => olderThan(convertSnowflake(message.id)) == true)
-
-    //return the message collection
-    return messageCollection
-}
-
-/**
- * Resolve messages
- * @param {Number} numOfMessages 
- * @param {Time} timeToWait 
- * @param {Map} message 
- * @param {Object} customFilter 
- * @returns 
- */
-const getMessages = async (numOfMessages, timeToWait, message, customFilter = 0) => {
-    //check if custom_filter is set, else filter by message author
-    let filter = (customFilter != 0) ? customFilter : m => m.author.id == message.author.id // Improved filtering.
-    let retValue = 0; //create empty return value
-    // Collect the messages
-    await message.channel.awaitMessages(filter, { max: numOfMessages, time: timeToWait, errors: ['time'] })
-        .then(collectedMessages => { //fill return value
-            retValue = Array.from(collectedMessages.values())
-        }).catch(err => { throw err }) //throw error
-    return retValue
-}
-
-/**
- * Resolve channel
- * @param {Object} guild 
- * @param {Array} input 
- * @param {String} flag 
- * @returns 
- */
-const getChannels = async (guild, input, flag) => {
-
-    //create return array
-    let array_id = []
-
-    //handle input (Array)
-    let input_string = Array.isArray(input) ? input.toString() : input
-    let input_array = input_string.split(',')
-
-    /*----------*/
-
-    //go through all input channels
-    input_array.forEach(channel => {
-
-        //filter input [1]
-        let mention = new RegExp('<#([0-9]+)>', 'g').exec(channel)
-        let item = mention != null ? mention[1] : channel.trim()
-
-        //filter input [2]
-        let filter = database.escape(item.replace(',', ''))
-        let filter_item = filter.substring(1).slice(0, -1).trim()
-
-        //get channel information
-        let targetChannel = filter_item.match(/^[0-9]+$/) != null ? guild.channels.cache.get(filter_item) : guild.channels.cache.find(channel => channel.name.toLowerCase() == filter_item.toLowerCase())
-
-        //check what flag is present
-        switch (flag) {
-            case "tag": //if user asked for channel tags, return channel tags
-                if (targetChannel) array_id.push(`<#${targetChannel.id}>`)
-                break;
-            case "name": //if user asked for channel names, return channel names
-                if (targetChannel) array_id.push(targetChannel.name)
-                break;
-            case "all": //if user requests all channel information
-                if (targetChannel) array_id.push(targetChannel)
-                break;
-            default:
-                if (targetChannel) array_id.push(targetChannel.id)
-        }
-    });
-
-    //check if any result and return
-    if (array_id.length >= 1) return array_id
-    else return false
-}
-
-/**
- * Resolve role
- * @param {Object} guild 
- * @param {Array} input 
- * @param {String} flag 
- * @returns 
- */
-const getRoles = async (guild, input, flag) => {
-
-    //create return array
-    let array_id = []
-
-    //handle input (Array)
-    // let input_string = Array.isArray(input) ? input.toString() : input
-    let input_string = (typeof input == 'object') ? input.toString() : input
-    let input_array = input_string.split(',')
-
-    //go through every input
-    input_array.forEach(role => {
-
-        //filter input [1]
-        let mention = new RegExp('<@&([0-9]+)>', 'g').exec(role)
-        let item = mention != null ? mention[1] : role.trim()
-
-        //filter input [2]
-        let filter = database.escape(item.replace(',', ''))
-        let filter_item = filter.substring(1).slice(0, -1).trim()
-
-        //get role information
-        let targetRole = filter_item.match(/^[0-9]+$/) != null ? guild.roles.cache.get(filter_item) : guild.roles.cache.find(role => role.name.toLowerCase() == filter_item.toLowerCase())
-
-        //check what flag is present
-        switch (flag) {
-            case "tag": //if user asked for rp;e ids, return role ids
-                if (targetRole) array_id.push(`<@&${targetRole.id}>`)
-                break;
-            case "name": //if user asked for role names, return role names
-                if (targetRole) array_id.push(targetRole.name)
-                break;
-            case "all": //if user requests all role information
-                if (targetRole) array_id.push(targetRole)
-                break;
-            default:
-                if (targetRole) array_id.push(targetRole.id)
-        }
-
-    });
-
-    //check if any result and return
-    if (array_id.length >= 1) return array_id
-    else return false
-
-}
-
-/**
- * Resolve user
- * @param {Object} guild 
- * @param {String} input 
- * @returns 
- */
-const getUser = async (guild, input) => {
-    if (!input) return
-
-    let member //setup member value
-
-    //filter input [1]
-    let mention = new RegExp('<@!?([0-9]+)>', 'g').exec(input)
-    let item = mention != null ? mention[1] : input.trim()
-
-    //filter input [2]
-    let filter = database.escape(item.replace(',', ''))
-    let filter_item = filter.substring(1).slice(0, -1).trim()
-
-    //get user by id
-    if (filter_item.match(/^[0-9]+$/)) {
-        member = await guild.members.cache.get(filter_item) //get user straight from member cache
-        if (!member) { member = await guild.members.cache.find(member => member.id == filter_item) } //find user in member cache
-        else if (!member) { member = await guild.members.fetch(filter_item); } //fetch member straight from guild
-        //if member is found (by id) return member
-        if (member) return member;
-    }
-
-    //get user by username#discriminator
-    if (filter_item.indexOf('#') > -1) {
-        let [name, discrim] = filter_item.split('#') //split the into username and (#) discriminator
-        member = await guild.members.cache.find(u => u.user.username === name && u.user.discriminator === discrim);
-        //if member is found (by username and discriminator) return member
-        if (member) return member;
-    }
-
-    //if member value is still empty, return false
-    if (!member) return false;
-}
-
-/**
- * Get command and guild permissions
- * @param {Object} client 
- * @param {Map} message 
- * @param {String} input 
- * @returns 
- */
-const getCommand = async (client, message, input) => {
-    //create commandInfo variable and get or find the command-name based on name or alias.
-    let commandInfo = client.commands.get(input) || client.commands.find(cmd => cmd.info.alias && cmd.info.alias.includes(input));
-    if (commandInfo) { //if a command is found, get permissions
-        return new Promise(async function (resolve) {
-            const query = (`SELECT * FROM ${message.guild.id}_permissions WHERE cmd_name = "${commandInfo.info.name}"`)
-            database.query(query, async function (err, result) { resolve(result) })
-        }).then(async function (result) {
-
-            //check if there is any result, else return false
-            let commandPermissions = (result.length < 1) ? false : result[0]
-            if (commandPermissions == false) return false
-
-            //construct command role access
-            let commandRoleA = result[0].role_access
-            commandRoleA = commandRoleA.split(',');
-
-            //construct command channel access
-            let commandChannelA = result[0].chnl_access
-            commandChannelA = commandChannelA.split(',');
-
-            //construct command disabled
-            const commandDisabled = result[0].disabled
-
-            //set returnArray to return
-            let returnArray = ({ name: commandInfo.info.name, alias: commandInfo.info.alias, usage: commandInfo.info.usage, desc: commandInfo.info.desc, role_access: commandRoleA, chnl_access: commandChannelA, disabled: commandDisabled })
-            return returnArray
-        });
-    } //if command is not found, return false
-    else return false
-}
-
-/**
- * Find command
- * @param {Object} client 
- * @param {String} input 
- * @returns 
- */
-const findCommand = async (client, input) => {
-    //create commandInfo variable and get or find the command-name based on name or alias.
-    let commandInfo = client.commands.get(input) || client.commands.find(cmd => cmd.info.alias && cmd.info.alias.includes(input));
-    //if a command is found, return map
-    if (commandInfo) return commandInfo.info
-    else return false
-}
-
-/**
- * Get input type for purge
- * @param {Object} guild 
- * @param {String} input 
- * @returns 
- */
-const inputType = async (guild, input) => {
-
-    //create return array
-    let typeArray = { "member": [], "amount": [] }
-
-    //handle input (Array)
-    let input_string = Array.isArray(input) ? input.toString() : input
-    let input_array = input_string.split(',')
-
-    //await for the loop to finish
-    await input_array.forEach(async item => {
-        if (item.length > 10) { //get member value
-            let target = await getUser(guild, item) //get member value
-            typeArray.member.push(target) //push member into user
-        }
-        if (item.length < 5) { //get amount value
-            typeArray.amount.push(item) //push amount into amount
-        }
-    });
-
-    return typeArray //return to outcome
-}
+//require packages & functions
+const mysql = require('mysql');
+const { time } = require('./functions');
+const { MessageMentions: { USERS_PATTERN, CHANNELS_PATTERN, ROLES_PATTERN }, Collection } = require('discord.js');
 
 module.exports = {
-    collectAllMessages,
-    getMessages,
-    getChannels,
-    getRoles,
-    getUser,
-    getCommand,
-    findCommand,
-    inputType
+
+    /** Get user information from input
+     * @param {Collection} guild 
+     * @param {String} input 
+     * @returns 
+     */
+    async getUserFromInput(guild, input) {
+        if (!input) return false;
+
+        //filter input
+        let mention = new RegExp('<@!?([0-9]+)>', 'g').exec(input)
+        let item = mention != null ? mention[1] : input.trim()
+
+        //fetch member from guild
+        try {
+            var member = await guild.members.fetch(item)
+                || await guild.members.cache.get(item)
+                || await guild.members.cache.find(m => m.id == item)
+
+            //if member value is present, return member
+            if (!member) return false;
+            else return member;
+
+        } catch (err) {
+            return false
+        }
+
+    },
+
+    /** Get channel information from input
+     * @param {*} guild 
+     * @param {*} input 
+     */
+    async getChannelfromInput(guild, input) {
+        if (!input) return false;
+
+        let channel //setup channel value
+
+        //filter input [1]
+        let mention = new RegExp('<#([0-9]+)>', 'g').exec(input)
+        let item = mention != null ? mention[1] : input.trim()
+
+        //filter input [2]
+        let filter = mysql.escape(item.replace(',', ''))
+        let filter_item = filter.substring(1).slice(0, -1).trim()
+
+        //get Channel by id
+        if (filter_item.match(/^[0-9]+$/)) {
+            channel = await guild.channels.cache.get(filter_item) //get channel straight from channel cache
+            if (!channel) { channel = await guild.channels.cache.find(channel => channel.id == filter_item) } //find channel in channel cache
+            else if (!channel) { channel = await guild.channels.fetch(filter_item) } //fetch channel straight from guild
+            //if channel is found (by id) return channel
+            if (channel) return channel;
+        }
+
+        //if channel value is still empty, return false
+        if (!channel) return false;
+
+    },
+
+    /** Collect Member message details
+     * @param {*} member 
+     * @returns 
+     */
+    async filterMessagePool(memberId, messagePool) {
+        function memberMessageLogs(activeMinutes, messageCount, editCount, channelCount, mentionCount, attachCount, stickerCount, gifCount, commandCount) {
+            this.activeMinutes = activeMinutes;
+            this.messageCount = messageCount;
+            this.editCount = editCount;
+            this.channelCount = channelCount;
+            this.mentionCount = mentionCount;
+            this.attachCount = attachCount;
+            this.stickerCount = stickerCount;
+            this.gifCount = gifCount;
+            this.commandCount = commandCount;
+        }
+
+        //transform collection to array & get all user messages
+        const messageCollection = messagePool.map(m => m);
+        //collect all user messages
+        const userCollection = messageCollection.filter(m => m.author.id === memberId);
+        //collect all editted messages || filter for editted messages
+        const editCollection = userCollection.filter(m => m.editedTimestamp != null);
+        //collect active minutes || calculate unique minutes for every hour
+        const timeCollection = [...new Set(userCollection.map(m => time(new Date(m.createdTimestamp))))];
+        //collect channel count || calculate unique channels in array
+        const channelCollection = [...new Set(userCollection.map(m => m.channelId))];
+        //collect mention count || filter for messages with mention(s)
+        const mentionCollection = userCollection.filter(m => m.mentions.size >= 1)
+        //collect attachment count || filter for messages with attachment(s)
+        const attachCollection = userCollection.filter(m => m.attachments.size >= 1);
+        //collect sticker count || filter for messages with sticker(s)
+        const stickerCollection = userCollection.filter(m => m.stickers.size >= 1);
+        //collect (tenor) gif count || filter for messages with tenor-url
+        const gifCollection = userCollection.filter(m => m.content.indexOf('https://tenor.com/view/') != -1);
+        //collect (possible) executed Hyper commands || filter for Hyper's prefix
+        const commandCollection = userCollection.filter(m => m.content.startsWith('.'))
+
+        //return member message details
+        const MemberMsgDetails = new memberMessageLogs(timeCollection, userCollection, editCollection, channelCollection, mentionCollection, attachCollection, stickerCollection, gifCollection, commandCollection)
+        return MemberMsgDetails;
+    },
+
+    /** Get all members from a roleId
+     * @param {*} guild 
+     * @param {*} roleId 
+     */
+    async getMembersFromRole(guild, roles) {
+        //setup member collection
+        const memberCollection = new Collection;
+
+        //go over each role and collect the members;
+        for await (let r of roles) {
+            //lookup the target role and collect memberlist
+            const targetRole = guild.roles.cache.get(r);
+            if (targetRole) {
+                //add every member to the collection
+                targetRole.members.forEach(member => {
+                    memberCollection.set(member.id, member)
+                });
+                // console.log(guild.roles.cache.get(r).members.map(m => m.id))
+                // memberCollection.concat(targetRole.members.map(m => m.id));
+            }
+        }
+        //return memberCollection
+        return memberCollection;
+    }
+
 }

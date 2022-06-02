@@ -1,25 +1,26 @@
-//require ownerIDs from configuration file
-const { ownerIDs } = require('../config/config.json')
-//construct utilities
-const GuildManager = require('../utils/GuildManager');
+/*  Fluxpuck © Creative Commons Attribution-NoDerivatives 4.0 International Public License  
+    This event is triggers by Discord and does processing of data  */
 
-//exports event
+//load required config
+const { ownerIds } = require('../config/config.json');
+
+//exports "message" event
 module.exports = async (client, message) => {
 
     //ignore private messages and messages from other bots
-    if (message.author.bot) return
-    if (message.channel.type === 'dm') return
+    if (message.channel.type === 'dm') return;
+    if (message.author.bot) return;
 
-    //get Guild Prefix
-    const prefix = await GuildManager.getGuildPrefix(message.guild);
+    //get prefix  
+    const prefix = message.guild.prefix;
 
-    //reply with Guild Prefix on bot mention
-    let bot_mention = new RegExp('<@!([0-9]+)>', 'g').exec(message.content) || new RegExp('<@([0-9]+)>', 'g').exec(message.content)
-    if (bot_mention != null && bot_mention[1] == client.user.id) {
-        message.reply(`Hey, this server's prefix is \`${prefix}\``)
+    //log message to Collection
+    if (message.guild.messagePool) {
+        message.guild.messagePool.set(message.id, message);
     }
 
-    //filter message content into workable elements
+    /** Message Handler
+     * filter message content into workable elements */
     const messageArray = message.content.split(' ')
     const messagePrefix = messageArray[0]
     const messageCommand = messagePrefix.replace(prefix, '').trim()
@@ -27,41 +28,30 @@ module.exports = async (client, message) => {
 
     //check if content starts with prefix, else return
     if (messagePrefix.startsWith(prefix)) {
+        //check for regular command (including alliasses)
+        const commandFile = (client.commands.get(messageCommand)) ?
+            client.commands.get(messageCommand) :
+            client.commands.find(cmd => cmd.info.alias.includes(messageCommand));
 
-        //check if it is regular command (plus check for aliasses)
-        let commandFile = (client.commands.get(messageCommand)) ? client.commands.get(messageCommand) : client.commands.find(cmd => cmd.info.alias.includes(messageCommand));
-        //if commandfile has been found
-        if (commandFile) {
-
-            //get Command Permissions for this Guild
-            const permissions = await GuildManager.getGuildCommandPermissions(message.guild, commandFile.info.name)
-            if (permissions != false) {
-
-                //set refuseArray for false items
-                let refuseArray = []
-
-                //check role access permissions
-                const role_access = permissions.role_access.split(',')
-                role_access.forEach(role => {
-                    if (message.member.roles.cache.has(role) == false) refuseArray.push(false)
-                });
-                //check channel access permissions
-                const chnl_access = permissions.chnl_access.split(',')
-                chnl_access.forEach(channel => {
-                    if (message.channel.id === channel) refuseArray.push(false)
-                });
-                //check default access permissions
-                const dft_access = permissions.dft_access.split(',')
-                dft_access.forEach(perm => {
-                    if (message.member.permissions.has(perm.trim()) == false) refuseArray.push(false)
-                });
-
-                /*  check if the refuse array does not have any false permissions
-                    and if the message author is bot owner  */
-                if (!refuseArray.includes(false) || ownerIDs.includes(message.member.id)) {
-                    if (commandFile) commandFile.run(client, message, messageArgs, prefix, permissions);
-                }
-            }
+        //if a commandFile has been found and message author has permissions
+        if (commandFile && ownerIds.includes(message.author.id)) {
+            //execute commandfile
+            commandFile.run(client, message, messageArgs, prefix); //execute command
         }
     }
+
+    //check if message starts with
+    if (message.content.startsWith('<@')
+        && message.content.endsWith('>')
+        && message.member.permissions.has("MANAGE_GUILD")) {
+        const users = message.content.match(/[a-z\d]+/ig);
+        if (users[0] === client.user.id) {
+            //reply with server info
+            message.reply(`Hello :wave:   Your current server prefix is \`${prefix}\``)
+                .then(msg => { setTimeout(() => msg.delete().catch((err) => { }), 4800) })
+                .catch((err) => { });
+        }
+    }
+
+    return;
 }

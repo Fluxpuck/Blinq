@@ -1,40 +1,45 @@
+/*  Fluxpuck © Creative Commons Attribution-NoDerivatives 4.0 International Public License
+    The ConsoleManager collects and sends all console messages */
+
 module.exports = {
 
-    /**
-    * Table log all Commands
-    * @param {Collection} commands 
-    */
-    logCommandTable(commands) {
+    /** Initial welcome message to the console */
+    WelcomeMessage() {
+        return console.log(`
+ ██████╗ ██╗     ██╗███╗   ██╗_██████╗ 
+ ██╔══██╗██║     ██║████╗  ██║██╔═══██╗
+ ██████╔╝██║     ██║██╔██╗ ██║██║   ██║
+ ██╔══██╗██║     ██║██║╚██╗██║██║▄▄_██║
+ ██████╔╝███████╗██║██║ ╚████║╚██████╔╝
+ ╚═════╝ ╚══════╝╚═╝╚═╝  ╚═══╝ ╚══▀▀═╝  
+Startup > ${new Date().toUTCString()}`)
+    },
+
+    /** Table log all Events
+     *  @param {Collection} events 
+     */
+    EventMessage(events) {
+        //setup the event
+        function Event(eventName, eventFile) {
+            this.eventName = eventName;
+            this.eventFile = eventFile;
+        }
+        //collect Events and seperate for console Table
+        let EventTable = (events.map(event => new Event(event.name, event.file)));
+        console.table(EventTable);
+    },
+
+    /** Table log all Commands
+     *  @param {Collection} commands 
+     */
+    CommandMessage(commands) {
         function Command(commandName, commandCategory) {
             this.commandName = commandName;
             this.commandCategory = commandCategory;
         }
-        //go over all commands
-        tableArray = []
-        commands.forEach(command => {
-            let item = new Command(command.info.name, command.info.category)
-            tableArray.push(item)
-        });
-        //log all commands in table
-        console.table(tableArray);
-    },
-
-    /**
-     * Table log all Events
-     * @param {Collection} events 
-     */
-    logEventTable(events) {
-        function Event(eventName) {
-            this.event = eventName;
-        }
-        //go over all events
-        tableArray = []
-        events.forEach(event => {
-            let item = new Event(event)
-            tableArray.push(item)
-        });
-        //log all events in table
-        console.table(tableArray);
+        //collect Commands and seperate for console Table
+        let CommandTable = (commands.map(command => new Command(command.info.name, command.info.category)));
+        console.table(CommandTable);
     }
 
-};
+}
