@@ -24,6 +24,7 @@ database
 .github
 PermissionManager.js
 00_owner
+assets
 
 # Misc
 .DS_STORE
