@@ -1,9 +1,9 @@
+/*  Fluxpuck © Creative Commons Attribution-NoDerivatives 4.0 International Public License
+    The EventManager setup and triggers all Discord Events */
+
 //load required modules
 const { readdirSync } = require('fs');
 const { join } = require('path');
-
-//construct Sero utilities
-const { logEventTable } = require('../utils/ConsoleManager');
 
 //run and export module
 module.exports.run = (client) => {
@@ -14,12 +14,10 @@ module.exports.run = (client) => {
 
     //go through all events and bind to Client
     for (const file of eventFiles) {
-        const event = require(`${filePath}/${file}`);
+        const event = require(`${filePath}/${file}`)
         const eventName = file.split('.').shift()
         client.on(eventName, event.bind(null, client))
+        client.events.set(eventName, { name: eventName, file: file })
     }
-    logEventTable(eventFiles)
 
-    //log on Client launch
-    console.log(` > Loaded ${eventFiles.length} events sucessfully.`)
 }

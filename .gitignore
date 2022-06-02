@@ -1,11 +1,36 @@
+# Logs
 *.log
 npm-debug.log*
-node_modules
+
+# Yarn
+.yarn/*
+!.yarn/patches
+!.yarn/releases
+!.yarn/plugins
+!.yarn/sdks
+!.yarn/versions
+.pnp.*
+
+# Preferences
 .env
-.DS_STORE
 package-lock.json
 .vscode
-assets
+
+# Folders
+node_modules
 config
-ADMIN
+database
+.yarn
+.github
+PermissionManager.js
+00_owner
+
+# Misc
+.DS_STORE
+package.json
+yarn.lock
+FAQ.md
+guildFetch.js
+autoReport.js
+transfer.js
 test.js

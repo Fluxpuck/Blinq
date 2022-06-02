@@ -1,8 +1,7 @@
-FROM node:16
-WORKDIR /blinq
-COPY package.json /blinq
+FROM node:16.15.0
+WORKDIR /hyper+
+COPY package.json /hyper+
 COPY package-lock.json ./
-RUN npm install -g npm
 RUN npm install
-COPY . /blinq
+COPY . /hyper+
 CMD node main.js

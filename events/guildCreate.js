@@ -1,15 +1,19 @@
-//construct utilities
-const DataManager = require('../utils/DataManager');
+/*  Fluxpuck © Creative Commons Attribution-NoDerivatives 4.0 International Public License  
+    This event is triggers by Discord and does processing of data  */
 
-//exports event
+//require modules
+const DataManager = require('../database/DbManager');
+const { insertGuild } = require('../database/QueryManager');
+
 module.exports = async (client, guild) => {
 
-    //update Databases for new Guild
-    await DataManager.updateGuildinfo(guild);
-    await DataManager.updateCommandPermissions(guild, client.commands);
-    await DataManager.updateUserStatsLogging(guild);
-    await DataManager.updateGeneralPermissions(guild);
+    //update general table(s)
+    await DataManager.UpdateGuildTable();
+    //update guild specific tables
+    //
 
-    /*------------------------------*/
+    //insert new guild
+    await insertGuild(guild);
 
+    return;
 }

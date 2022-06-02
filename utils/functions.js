@@ -1,15 +1,9 @@
-//require DiscordJS
-const { MessageEmbed } = require('discord.js');
-
-//require embed structures
-const embed = require('../config/embed.json')
-
-/*------------------------------*/
+/*  Fluxpuck © Creative Commons Attribution-NoDerivatives 4.0 International Public License  
+    This file contains some basic javascript functions */
 
 module.exports = {
 
-    /**
-     * Convert timestamp to 2400 time object.
+    /** convert timestamp to 2400 time object
      * @param {String} t Time object
      */
     time(t) {
@@ -23,37 +17,28 @@ module.exports = {
         } else return undefined
     },
 
-    /**
-     * Milliseconds to Midnight
+    /** convert milliseconds to hours, minutes, and seconds
+     * @param {*} t 
+     * @returns 
      */
-    millisecondsUntilMidnight() {
-        var midnight = new Date();
-        midnight.setHours(24);
-        midnight.setMinutes(0);
-        midnight.setSeconds(0);
-        midnight.setMilliseconds(0);
-        return (midnight.getTime() - new Date().getTime())
+    msToTime(t) {
+        //get hours, minutes and seconds
+        const date = new Date(t * 1000);
+        const days = date.getUTCDate() - 1,
+            hours = date.getUTCHours(),
+            minutes = date.getUTCMinutes(),
+            seconds = date.getUTCSeconds()
+        let segments = []; //prepare array
+        //seperate in segments
+        if (days > 0) segments.push(days + ' day' + ((days == 1) ? '' : 's'));
+        if (hours > 0) segments.push(hours + ' hr' + ((hours == 1) ? '' : 's'));
+        if (minutes > 0) segments.push(minutes + ' min' + ((minutes == 1) ? '' : 's'));
+        if (seconds > 0) segments.push(seconds + ' sec' + ((seconds == 1) ? '' : 's'));
+        const dateString = segments.join(', ');
+        return dateString //return to user
     },
 
-    /**
-     * Calculate milliseconds to hours, minutes and seconds
-     * @param {Time} duration 
-     */
-    msToTime(duration) {
-        var milliseconds = Math.floor((duration % 1000) / 100),
-            seconds = Math.floor((duration / 1000) % 60),
-            minutes = Math.floor((duration / (1000 * 60)) % 60),
-            hours = Math.floor((duration / (1000 * 60 * 60)) % 24);
-
-        hours = (hours < 10) ? "0" + hours : hours;
-        minutes = (minutes < 10) ? "0" + minutes : minutes;
-        seconds = (seconds < 10) ? "0" + seconds : seconds;
-
-        return hours + ":" + minutes + ":" + seconds + "." + milliseconds;
-    },
-
-    /**
-     * Capitalize full string
+    /** capitalize full string
      * @param {String} str String object
      */
     capitalize(str) {
@@ -69,66 +54,35 @@ module.exports = {
         );
     },
 
-    /**
-     * Create and send generalized Error message.
-     * @param {Map} message Message object
-     * @param {String} input Error message input
-     * @param {String} timer Timeout
-     */
-    async ErrorMessage(message, input, timer) {
-        //create error embed
-        let ErrorEmbed = new MessageEmbed()
-            .setDescription(`❗ ${input}`)
-            .setColor(embed.color)
-        //check if a remove timer is set!
-        if (timer) { //if timer is set return error message and remove
-            return message.channel.send(ErrorEmbed).then(msg => { msg.delete({ timeout: timer, reason: 'Removed error message, Serobot' }); })
-        } else { //if no timer is set, just return error message
-            return message.channel.send(ErrorEmbed)
-        }
-    },
-
-    /**
-     * Clean the string object.
-     * @param {String} string String object
-     */
-    clean(string) {
-        if (typeof text === 'string') {
+    /** clean the string object
+    * @param {String} string String object
+    */
+    clean(client, string) {
+        if (typeof string === 'string') {
             return string
                 .replace(/`/g, '`' + String.fromCharCode(8203))
                 .replace(/@/g, '@' + String.fromCharCode(8203))
-                .replace(client.token || process.env.TOKEN, '[-- REDACTED --]')
+                .replace(/token/i, '' + String.fromCharCode(8203))
+                .replace(client.token || process.env.TOKEN, '')
         } else {
             return string;
         }
     },
 
-    /**
-     * slice array in chunks
+    /** slice array in chunks
      * @param {Array} array Lenghy array
      * @param {Number} chunk Chunk size
      */
     chunk(array, chunk) {
-        var i, j, temp, returnArray = [];
+        let i, j, temp, returnArray = [];
         for (i = 0, j = array.length; i < j; i += chunk) {
             returnArray.push(temp = array.slice(i, i + chunk));
         }
         return returnArray;
     },
 
-    olderThan(timestamp) {
-        //setup the times 
-        const now = +new Date()
-        const messageTime = +new Date((timestamp))
-        const oneday = 60 * 60 * 24 * 1000
-
-        //return true or false
-        return (now - messageTime) > oneday
-    },
-
-    /**
-     * convert snowflake to timestamp
-     * @param {Snowflake} input 
+    /** get timestamp from snowflake
+     * @param {*} input 
      * @returns 
      */
     convertSnowflake(input) {
@@ -151,5 +105,69 @@ module.exports = {
         return timestamp
     },
 
+    /** seperate string on flags
+     * @param {*} str 
+     * @param {*} options 
+     * @param  {...any} flagsToDetect 
+     * @returns 
+     */
+    async separateFlags(str, options = {}, ...flagsToDetect) {
+        class customflag {
+            constructor(flagName, flagArgs, validArgs) {
+                this.name = flagName // Flag name
+                this.args = flagArgs // Flag arguments
+                this.validArgs = validArgs // Whether arguments are valid aka not undefined and have a length greater than 0
+            }
+        }
+        if (!options.hasOwnProperty("separator")) Object.assign(options, { separator: 0 })
+        if (!options.hasOwnProperty("allowDuplicates")) Object.assign(options, { allowDuplicates: false })
+        return new Promise((resolve, reject) => {
+            if (options.separator == 0) reject("Nothing to separate the flags with.")
+
+            // setting up variables
+            // check to see if we passed all flags we need as an array or individual arguments and makes an appropriate array from it.
+            let flags = Array.isArray(flagsToDetect[0]) ? flagsToDetect[0] : Array.from(flagsToDetect)
+
+            // split by '-' to see what we need and remove everything before 1st flag:
+            // there will be arguments with spaces inside.
+            let args = str.split(options.separator)
+            args.splice(0, 1)
+
+            // decide the datatype we need
+            // duplicates allowed -> array, if no then set.
+            let flagSet = options.allowDuplicates ? [] : new Set()
+
+            try {
+                args.forEach(arg => {
+
+                    // flag variables
+                    let currArgs = arg.split(' ') // for each argument with spaces inside, split it up
+                    let currentFlag = currArgs[0].toLowerCase()
+                    currArgs.splice(0, 1) // delete the flag from the arguments
+                    let currentFlagArgs = ''
+
+                    // if we don't need to search for the specific flag, ignore it.
+                    if (!flags.includes(currentFlag)) return
+
+                    // splitting and finding the flag, and the arguments of the flag
+                    currArgs.forEach(flagArg => {
+                        if (flagArg != '') currentFlagArgs += `${flagArg} `
+                    })
+                    currentFlagArgs = currentFlagArgs.substring(0, currentFlagArgs.length - 1) // remove the last space
+
+                    // check if the flag arguments are undefined - if no check if the arguments are actually valid (length > 0) - if yes - set to true
+                    let validArgs = currentFlagArgs == undefined ? false : currentFlagArgs.length > 0
+
+                    if (options.allowDuplicates) flagSet.push(new customflag(currentFlag, currentFlagArgs, validArgs))
+                    else flagSet.add(new customflag(currentFlag, currentFlagArgs, validArgs))
+                })
+
+                resolve(flagSet);
+            }
+            catch (err) {
+                reject(err);
+            }
+        })
+    },
 
 };
