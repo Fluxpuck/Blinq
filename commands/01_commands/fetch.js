@@ -2,11 +2,52 @@
     For more information on the commands, please visit hyperbot.cc  */
 
 //require utilities
-const { filterMessagePool } = require("../../utils/Resolver")
+const { MessageEmbed, SnowflakeUtil } = require("discord.js");
+const { convertSnowflake } = require("../../utils/functions");
+const { filterMessagePool, getUserFromInput } = require("../../utils/Resolver");
 
 //construct the command and export
 module.exports.run = async (client, message, arguments, prefix) => {
+    //if there are no arguments, no target has been defined
+    if (arguments.length < 1) return message.reply('@user was not provided');
 
+    //get target user
+    const member = await getUserFromInput(message.guild, arguments[0]);
+    if (member == false) return message.replt('@user was not found');
+
+    //setup new collection & first/last messages
+    const messageCollection = message.guild.messagePool;
+    const firstMessage = messageCollection.first();
+    const lastMessage = messageCollection.last();
+    const firstMessageDate = convertSnowflake(firstMessage.id);
+    const lastMessageDate = convertSnowflake(lastMessage.id);
+
+    //collect message details from member
+    const memberMessageDetails = await filterMessagePool(member.id, messageCollection);
+    //get counters for each detail
+
+    //construct Embedded Message
+    const messageEmbed = new MessageEmbed()
+        .setTitle(`Member statistics :     ${member.user.tag}`)
+        .setDescription(`*${firstMessageDate.toUTCString()}* → *${lastMessageDate.toUTCString()}*`)
+        .addFields(
+            { name: `Total Messages`, value: `\`\`\`${memberMessageDetails.messageCount.length}\`\`\``, inline: true },
+            { name: `Active Minutes`, value: `\`\`\`${memberMessageDetails.activeMinutes.length}\`\`\``, inline: true },
+            { name: `Messages Editted`, value: `\`\`\`${memberMessageDetails.editCount.length}\`\`\``, inline: true },
+            { name: `Commands Used`, value: `\`\`\`${memberMessageDetails.commandCount.length}\`\`\``, inline: true },
+            { name: `Attachments send`, value: `\`\`\`${memberMessageDetails.attachCount.length}\`\`\``, inline: true },
+            { name: `Users Mentioned`, value: `\`\`\`${memberMessageDetails.mentionCount.length}\`\`\``, inline: true },
+            { name: `Stickers Used`, value: `\`\`\`${memberMessageDetails.stickerCount.length}\`\`\``, inline: true },
+            { name: `Gifs Send`, value: `\`\`\`${memberMessageDetails.gifCount.length}\`\`\``, inline: true },
+            { name: `Channels Used`, value: `${memberMessageDetails.channelCount.length >= 1 ? memberMessageDetails.channelCount.map(c => `<#${c}>`).join(',') : 'None'}`, inline: false },
+        )
+        .setThumbnail(member.user.avatarURL())
+        .setColor()
+        .setTimestamp()
+        .setFooter({ text: `${member.id}`, iconURL: member.user.displayAvatarURL() })
+
+    //send message
+    return message.reply({ embeds: [messageEmbed] })
 
 
 
