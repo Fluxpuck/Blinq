@@ -13,18 +13,20 @@ module.exports.run = async (client, message, arguments, prefix) => {
 
     //get target user
     const member = await getUserFromInput(message.guild, arguments[0]);
-    if (member == false) return message.replt('@user was not found');
+    if (member == false) return message.reply('@user was not found');
 
     //setup new collection & first/last messages
     const messageCollection = message.guild.messagePool;
     const firstMessage = messageCollection.first();
     const lastMessage = messageCollection.last();
+
+    //calculate active time in hrs
     const firstMessageDate = convertSnowflake(firstMessage.id);
     const lastMessageDate = convertSnowflake(lastMessage.id);
+    //make calculation .... and add to description
 
     //collect message details from member
     const memberMessageDetails = await filterMessagePool(member.id, messageCollection);
-    //get counters for each detail
 
     //construct Embedded Message
     const messageEmbed = new MessageEmbed()
@@ -39,7 +41,7 @@ module.exports.run = async (client, message, arguments, prefix) => {
             { name: `Users Mentioned`, value: `\`\`\`${memberMessageDetails.mentionCount.length}\`\`\``, inline: true },
             { name: `Stickers Used`, value: `\`\`\`${memberMessageDetails.stickerCount.length}\`\`\``, inline: true },
             { name: `Gifs Send`, value: `\`\`\`${memberMessageDetails.gifCount.length}\`\`\``, inline: true },
-            { name: `Channels Used`, value: `${memberMessageDetails.channelCount.length >= 1 ? memberMessageDetails.channelCount.map(c => `<#${c}>`).join(',') : 'None'}`, inline: false },
+            { name: `Channels Used (${memberMessageDetails.channelCount.length})`, value: `${memberMessageDetails.channelCount.length >= 1 ? memberMessageDetails.channelCount.map(c => `<#${c}>`).join(',') : 'None'}`, inline: false },
         )
         .setThumbnail(member.user.avatarURL())
         .setColor()
@@ -48,12 +50,6 @@ module.exports.run = async (client, message, arguments, prefix) => {
 
     //send message
     return message.reply({ embeds: [messageEmbed] })
-
-
-
-
-
-
 }
 
 

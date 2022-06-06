@@ -7,6 +7,9 @@ const { filterMessagePool, getMembersFromRole } = require("../utils/Resolver")
 
 //require config
 module.exports = async (client, guild) => {
+    //fetch all members per guild
+    guild.members.fetch();
+
     //collect tracking roles
     const trackingRoles = await getTrackingRoles(guild.id);
     if (trackingRoles.length <= 0) return;
