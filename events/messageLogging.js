@@ -2,20 +2,15 @@
     This custom event is triggers on a timer and collects and processes data  */
 
 //require utilities
-const { getTrackingRoles, saveTrackingData } = require("../database/QueryManager")
-const { filterMessagePool, getMembersFromRole } = require("../utils/Resolver")
+const { getTrackingMembers, saveTrackingData, updateMemberTC } = require("../database/QueryManager")
+const { filterMessagePool } = require("../utils/Resolver")
 
 //require config
 module.exports = async (client, guild) => {
-    //fetch all members per guild
-    guild.members.fetch();
 
-    //collect tracking roles
-    const trackingRoles = await getTrackingRoles(guild.id);
-    if (trackingRoles.length <= 0) return;
-    //collect members from role(s)
-    const memberCollection = await getMembersFromRole(guild, trackingRoles);
-    if (memberCollection.size <= 0) return;
+    //collect targetted tracking roles
+    const trackingMembers = await getTrackingMembers(message.guild.id)
+    if (trackingMembers.length <= 0) return;
 
     //setup new collection & first/last messages
     const messageCollection = guild.messagePool;
@@ -25,8 +20,8 @@ module.exports = async (client, guild) => {
     //delete entire message collection, to start-over
     guild.messagePool.sweep(m => m);
 
-    //collect message details for each member
-    for await (const [key, value] of memberCollection.entries()) {
+    //go through every member that needs to be tracked
+    for await (member of trackingMembers) {
         function memberMessageLogs(activeMinutes, messageCount, editCount, channelCount, mentionCount, attachCount, stickerCount, gifCount, commandCount) {
             this.activeMinutes = activeMinutes;
             this.messageCount = messageCount;
@@ -38,8 +33,9 @@ module.exports = async (client, guild) => {
             this.gifCount = gifCount;
             this.commandCount = commandCount;
         }
+
         //collect message details from member
-        const memberMessageDetails = await filterMessagePool(key, messageCollection);
+        const memberMessageDetails = await filterMessagePool(member.userId, messageCollection);
         //get counters for each detail
         const memberMessageCounters = new memberMessageLogs(
             memberMessageDetails.activeMinutes.length,
@@ -54,7 +50,10 @@ module.exports = async (client, guild) => {
         )
 
         //save to database
-        await saveTrackingData(guild.id, user = { id: key, username: value.user.tag }, memberMessageCounters)
+        await saveTrackingData(guild.id, user = { id: member.userId, username: member.userName }, memberMessageCounters)
+        await updateMemberTC(guild.id, member.userId);
+
     }
+
     return;
 }

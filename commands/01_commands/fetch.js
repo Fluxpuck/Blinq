@@ -3,7 +3,7 @@
 
 //require utilities
 const { MessageEmbed, SnowflakeUtil } = require("discord.js");
-const { convertSnowflake } = require("../../utils/functions");
+const { convertSnowflake, convertMsToTime } = require("../../utils/functions");
 const { filterMessagePool, getUserFromInput } = require("../../utils/Resolver");
 
 //construct the command and export
@@ -23,7 +23,9 @@ module.exports.run = async (client, message, arguments, prefix) => {
     //calculate active time in hrs
     const firstMessageDate = convertSnowflake(firstMessage.id);
     const lastMessageDate = convertSnowflake(lastMessage.id);
-    //make calculation .... and add to description
+
+    //calculate time difference between dates
+    const timeDiff = Math.floor(lastMessageDate - firstMessageDate);
 
     //collect message details from member
     const memberMessageDetails = await filterMessagePool(member.id, messageCollection);
@@ -31,7 +33,7 @@ module.exports.run = async (client, message, arguments, prefix) => {
     //construct Embedded Message
     const messageEmbed = new MessageEmbed()
         .setTitle(`Member statistics :     ${member.user.tag}`)
-        .setDescription(`*${firstMessageDate.toUTCString()}* → *${lastMessageDate.toUTCString()}*`)
+        .setDescription(`*${firstMessageDate.toUTCString()}* - *${lastMessageDate.toUTCString()}* → **${convertMsToTime(timeDiff)}**`)
         .addFields(
             { name: `Total Messages`, value: `\`\`\`${memberMessageDetails.messageCount.length}\`\`\``, inline: true },
             { name: `Active Minutes`, value: `\`\`\`${memberMessageDetails.activeMinutes.length}\`\`\``, inline: true },
@@ -52,12 +54,11 @@ module.exports.run = async (client, message, arguments, prefix) => {
     return message.reply({ embeds: [messageEmbed] })
 }
 
-
 //command information
 module.exports.info = {
     name: 'fetch',
     alias: ['collect'],
-    category: '',
+    category: 'main',
     desc: 'Fetch member statistics',
     usage: '{prefix}fetch @member',
 }
