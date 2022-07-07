@@ -34,16 +34,11 @@ module.exports = async (client) => {
         //update client/guild table(s)
         await DataManager.UpdateGuildTable();
         await DataManager.UpdateTrackingTable(guild.id);
+        await DataManager.UpdateMembersTable(guild.id);
         //load guild specific values
         await loadGuildPrefixes(guild);
         //setup guild collection(s)
         guild.messagePool = await new Collection;
-    }
-
-    //on the background fetch all members
-    for (let guild of guilds) {
-        //fetch all members per guild
-        guild.members.fetch();
     }
 
     //set client activity

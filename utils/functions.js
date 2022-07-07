@@ -3,8 +3,34 @@
 
 module.exports = {
 
+    /** pad to double digit number
+     * @param {*} num 
+     * @returns 
+     */
+    padTo2Digits(num) {
+        return num.toString().padStart(2, '0');
+    },
+
+    /** convert milliseconds to time
+     * @param {*} milliseconds 
+     * @returns 
+     */
+    convertMsToTime(milliseconds) {
+        let seconds = Math.floor(milliseconds / 1000);
+        let minutes = Math.floor(seconds / 60);
+        let hours = Math.floor(minutes / 60);
+
+        seconds = seconds % 60;
+        minutes = minutes % 60;
+
+        return `${module.exports.padTo2Digits(hours)}:${module.exports.padTo2Digits(minutes)}:${module.exports.padTo2Digits(
+            seconds,
+        )}`;
+    },
+
     /** convert timestamp to 2400 time object
      * @param {String} t Time object
+     * @returns 
      */
     time(t) {
         //check if (t) is a valid time string

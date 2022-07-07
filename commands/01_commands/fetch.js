@@ -3,7 +3,7 @@
 
 //require utilities
 const { MessageEmbed, SnowflakeUtil } = require("discord.js");
-const { convertSnowflake } = require("../../utils/functions");
+const { convertSnowflake, convertMsToTime } = require("../../utils/functions");
 const { filterMessagePool, getUserFromInput } = require("../../utils/Resolver");
 
 //construct the command and export
@@ -13,23 +13,27 @@ module.exports.run = async (client, message, arguments, prefix) => {
 
     //get target user
     const member = await getUserFromInput(message.guild, arguments[0]);
-    if (member == false) return message.replt('@user was not found');
+    if (member == false) return message.reply('@user was not found');
 
     //setup new collection & first/last messages
     const messageCollection = message.guild.messagePool;
     const firstMessage = messageCollection.first();
     const lastMessage = messageCollection.last();
+
+    //calculate active time in hrs
     const firstMessageDate = convertSnowflake(firstMessage.id);
     const lastMessageDate = convertSnowflake(lastMessage.id);
 
+    //calculate time difference between dates
+    const timeDiff = Math.floor(lastMessageDate - firstMessageDate);
+
     //collect message details from member
     const memberMessageDetails = await filterMessagePool(member.id, messageCollection);
-    //get counters for each detail
 
     //construct Embedded Message
     const messageEmbed = new MessageEmbed()
         .setTitle(`Member statistics :     ${member.user.tag}`)
-        .setDescription(`*${firstMessageDate.toUTCString()}* → *${lastMessageDate.toUTCString()}*`)
+        .setDescription(`*${firstMessageDate.toUTCString()}* - *${lastMessageDate.toUTCString()}* → **${convertMsToTime(timeDiff)}**`)
         .addFields(
             { name: `Total Messages`, value: `\`\`\`${memberMessageDetails.messageCount.length}\`\`\``, inline: true },
             { name: `Active Minutes`, value: `\`\`\`${memberMessageDetails.activeMinutes.length}\`\`\``, inline: true },
@@ -39,7 +43,7 @@ module.exports.run = async (client, message, arguments, prefix) => {
             { name: `Users Mentioned`, value: `\`\`\`${memberMessageDetails.mentionCount.length}\`\`\``, inline: true },
             { name: `Stickers Used`, value: `\`\`\`${memberMessageDetails.stickerCount.length}\`\`\``, inline: true },
             { name: `Gifs Send`, value: `\`\`\`${memberMessageDetails.gifCount.length}\`\`\``, inline: true },
-            { name: `Channels Used`, value: `${memberMessageDetails.channelCount.length >= 1 ? memberMessageDetails.channelCount.map(c => `<#${c}>`).join(',') : 'None'}`, inline: false },
+            { name: `Channels Used (${memberMessageDetails.channelCount.length})`, value: `${memberMessageDetails.channelCount.length >= 1 ? memberMessageDetails.channelCount.map(c => `<#${c}>`).join(',') : 'None'}`, inline: false },
         )
         .setThumbnail(member.user.avatarURL())
         .setColor()
@@ -48,20 +52,13 @@ module.exports.run = async (client, message, arguments, prefix) => {
 
     //send message
     return message.reply({ embeds: [messageEmbed] })
-
-
-
-
-
-
 }
-
 
 //command information
 module.exports.info = {
     name: 'fetch',
     alias: ['collect'],
-    category: '',
+    category: 'main',
     desc: 'Fetch member statistics',
     usage: '{prefix}fetch @member',
 }

@@ -127,8 +127,6 @@ module.exports = {
                 targetRole.members.forEach(member => {
                     memberCollection.set(member.id, member)
                 });
-                // console.log(guild.roles.cache.get(r).members.map(m => m.id))
-                // memberCollection.concat(targetRole.members.map(m => m.id));
             }
         }
         //return memberCollection
