@@ -9,7 +9,7 @@ const { filterMessagePool } = require("../utils/Resolver")
 module.exports = async (client, guild) => {
 
     //collect targetted tracking roles
-    const trackingMembers = await getTrackingMembers(message.guild.id)
+    const trackingMembers = await getTrackingMembers(guild.id)
     if (trackingMembers.length <= 0) return;
 
     //setup new collection & first/last messages
